@@ -94,6 +94,30 @@ class VIEW3D_OT_SaveActionButton(bpy.types.Operator, ExportHelper):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+
+class VIEW3D_OT_FixJsonListButton(bpy.types.Operator, ExportHelper):
+    bl_idname = "mhw.fix_json_list"
+    bl_label = "Fix JSON List"
+    bl_options = {'UNDO'}
+
+    filename_ext = ".json"
+    filter_glob = StringProperty(default="*.json", options={'HIDDEN'})
+    filepath = StringProperty(name="File Path", maxlen=1024, default="")
+
+    def execute(self, context):
+        jlist = io_json.loadJson(self.filepath)
+        string = "".join(["  %s,\n" % elt for elt in jlist])
+        fp = open(self.filepath, "w")
+        fp.write(
+            "[\n" +
+            string[:-3] +
+            "\n]\n")
+        return{'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
 #------------------------------------------------------------------------
 #    Actions
 #------------------------------------------------------------------------
@@ -268,11 +292,11 @@ BodyPoses = [
 def saveAction(context, filepath):
     rig = context.object
 
-    name = "All"
+    name = "Face"
     if name == "Face":
         poses = ["Neutral"] + FacePoses
-        begin = 1
-        end = 99
+        begin = 0
+        end = 48
     elif name == "All":
         poses = ["Neutral"] + FacePoses + BodyPoses
         begin = 1
@@ -280,17 +304,23 @@ def saveAction(context, filepath):
 
     fcurves = {}
     affected = {}
-    times = {1:True}
+    times = {begin:True}
 
     act = rig.animation_data.action
+    afcurves = []
     for fcu in act.fcurves:
-        bname = fcu.data_path.split('"')[1]
+        try:
+            bname = fcu.data_path.split('"')[1]
+        except IndexError:
+            print ("Datapath '%s'" % fcu.data_path)
+            continue
         fcurves[bname] = {}
         affected[bname] = {}
+        afcurves.append(fcu)
 
     print("Range", begin, end)
 
-    for fcu in act.fcurves:
+    for fcu in afcurves:
         bname = fcu.data_path.split('"')[1]
         values = fcurves[bname][fcu.array_index] = []
         for t in range(begin,end+1):
@@ -378,8 +408,8 @@ from .flags import *
 ''')
 
     bpy.ops.object.mode_set(mode='OBJECT')
-    ignores,connects = writeJoints(fp, rig, ob, scn)
-    writeHeadsTails(fp, rig, connects)
+    hjoints,tjoints,ignores,connects = writeJoints(fp, rig, ob, scn)
+    writeHeadsTails(fp, rig, hjoints, tjoints, connects)
     hier = makeHierarchy(rig)
     writeArmature(fp, hier, rig, [])
     bpy.ops.object.mode_set(mode='POSE')
@@ -431,56 +461,76 @@ def writeJoints(fp, rig, ob, scn):
 
     scn.objects.active = ob
     joints = defineJoints(ob)
+
+    for j in joints:
+        fp.write("  ('%s', 'j', '%s'),\n" % (j,j))
+    fp.write('\n')
+
     scn.objects.active = rig
     bpy.ops.object.mode_set(mode='EDIT')
     ignores = []
     dolast = []
     connects = {}
+    hjoints = {}
+    tjoints = {}
     for eb in rig.data.edit_bones:
         bname = getBoneName(eb)
+        jname = findJoint(eb.head, joints)
+        if jname:
+            hjoints[bname] = jname
 
         if (eb.parent and
-            (eb.use_connect or distance(eb.head, eb.parent.tail) < 1e-3)):
+              (eb.use_connect or distance(eb.head, eb.parent.tail) < 1e-3)):
             connects[bname] = getBoneName(eb.parent)
-        else:
+        elif not jname:
             hv = findVertex(eb.head, ob.data.vertices)
             if hv:
                 hdloc = ("  ('%s_hd', 'v', %d),\n" % (bname, hv.index))
-            else:
-                jname = findJoint(eb.head, joints)
-                if jname:
-                    hdloc = ("  ('%s_hd', 'j', '%s'),\n" % (bname, jname))
-                else:
-                    hdloc = None
-            if hdloc:
                 fp.write(hdloc)
 
-        tv = findVertex(eb.tail, ob.data.vertices)
         jname = findJoint(eb.tail, joints)
-        if tv:
-            tlloc = ("  ('%s_tl', 'v', %d),\n" % (bname, tv.index))
-        elif jname:
-            tlloc = ("  ('%s_tl', 'j', '%s'),\n" % (bname, jname))
-        elif len(eb.children) == 1:
-            child = eb.children[0]
-            frac = eb.length / (eb.length + child.length)
-            dolast.append((bname, getBoneName(child), frac))
-            tlloc = None
+        if jname:
+            tjoints[bname] = jname
         else:
-            ignores.append(bname)
-        if tlloc:
-            fp.write(tlloc)
+            tv = findVertex(eb.tail, ob.data.vertices)
+            if tv:
+                tlloc = ("  ('%s_tl', 'v', %d),\n" % (bname, tv.index))
+            elif len(eb.children) == 1:
+                child = eb.children[0]
+                frac = eb.length / (eb.length + child.length)
+                dolast.append((bname, getBoneName(child), frac))
+                tlloc = None
+            else:
+                ignores.append(bname)
+            if tlloc:
+                fp.write(tlloc)
 
     for bname, cname, frac in dolast:
-        try:
-            head = '%s_tl' % connects[bname]
-        except KeyError:
-            head = '%s_hd' % bname
-        fp.write("  ('%s_tl', 'l', ((%.4f, '%s'), (%.4f, '%s_tl'))),\n" %
-            (bname, 1-frac, head, frac, cname))
+        hloc = getHeadLoc(bname, hjoints, connects)
+        tloc = getTailLoc(bname, tjoints)
+        fp.write("  ('%s_tl', 'l', ((%.4f, '%s'), (%.4f, '%s'))),\n" %
+            (bname, 1-frac, hloc, frac, tloc))
 
     fp.write("\n]\n")
-    return ignores, connects
+    return hjoints, tjoints, ignores, connects
+
+
+def getHeadLoc(bname, hjoints, connects):
+    try:
+        return hjoints[bname]
+    except KeyError:
+        pass
+    try:
+        return ('%s_tl' % connects[bname])
+    except KeyError:
+        return ('%s_hd' % bname)
+
+
+def getTailLoc(bname, tjoints):
+    try:
+        return tjoints[bname]
+    except KeyError:
+        return ('%s_tl' % bname)
 
 
 def findJoint(co, joints):
@@ -511,16 +561,14 @@ def getBoneName(bone):
     return bname
 
 
-def writeHeadsTails(fp, rig, connects):
+def writeHeadsTails(fp, rig, hjoints, tjoints, connects):
     fp.write("\nHeadsTails = {\n")
     for bone in rig.data.bones:
         bname = getBoneName(bone)
-        try:
-            fp.write("  '%s' : ('%s_tl', '%s_tl'),\n" % (bname, connects[bname], bname))
-        except KeyError:
-            fp.write("  '%s' : ('%s_hd', '%s_tl'),\n" % (bname, bname, bname))
+        hloc = getHeadLoc(bname, hjoints, connects)
+        tloc = getTailLoc(bname, tjoints)
+        fp.write("  '%s' : ('%s', '%s'),\n" % (bname, hloc, tloc))
     fp.write("\n}\n")
-
 
 
 def writeArmature(fp, hier, rig, ignores):

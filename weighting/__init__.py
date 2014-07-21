@@ -97,10 +97,13 @@ class MhxRiggingPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         rig = context.object
+        scn = context.scene
         layout.operator("mhw.save_rig")
         layout.operator("mhw.save_action")
         layout.operator("mhw.save_vertex_groups")
+        layout.prop(scn, 'MhxExportSelectedOnly', text="Selected VGroups Only")
         layout.prop(rig, "MhxExportZeroRoll")
+        layout.operator("mhw.fix_json_list")
 
 
 class MhxVGroupsPanel(bpy.types.Panel):
