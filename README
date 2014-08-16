@@ -1,0 +1,31 @@
+MakeHuman Utilities
+===================
+
+This repository contains extra utilities for use with the MakeHuman software.
+These utilities are mainly aimed at development and for advanced use, and are
+not required for using MakeHuman.
+
+MakeHuman
+=========
+
+Makehuman is a completely free, innovative and professional software for the 
+modelling of 3-Dimensional humanoid characters.
+
+The official source repository of the MakeHuman project is located at
+https://bitbucket.org/MakeHuman/makehuman
+
+Official website: http://www.makehuman.org
+Development status: http://bugtracker.makehuman.org
+
+License
+-------
+
+MakeHuman's source code and its mesh data is distributed freely under the AGPL3
+license (see license.txt). Content created using the MakeHuman application is
+released under the liberal CC0 license. For more details, refer to these pages:
+
+* https://www.makehuman.org/doc/node/the_makehuman_application.html
+* https://www.makehuman.org/doc/node/makehuman_mesh_license.html
+
+Some of these tools might be distributed under different terms, consult the
+source files for more details on the license that applies.
