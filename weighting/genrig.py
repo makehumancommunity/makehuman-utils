@@ -106,11 +106,11 @@ class VIEW3D_OT_FixJsonListButton(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         jlist = io_json.loadJson(self.filepath)
-        string = "".join(["  %s,\n" % elt for elt in jlist])
+        string = "".join([('  ["%s", %s],\n' % tuple(elt)) for elt in jlist])
         fp = open(self.filepath, "w")
         fp.write(
             "[\n" +
-            string[:-3] +
+            string[:-2] +
             "\n]\n")
         return{'FINISHED'}
 
@@ -131,6 +131,8 @@ FaceShiftNames = {
     "RightBrowUp" : "05_BrowsU_R",
     "LeftCheekUp" : "06_CheekSquint_L",
     "RightCheekUp" : "07_CheekSquint_R",
+    "ChinUp" : "08_ChinLowerRaise",
+    "UpperLipUp3" : "09_ChinUpperRaise",
     "LeftEyeClose" : "10_EyeBlink_L",
     "RightEyeClose" : "11_EyeBlink_R",
     "LeftEyeDown" : "12_EyeDown_L",
@@ -170,8 +172,6 @@ FaceShiftNames = {
     "MouthRightSmile3" : "46_MouthSmile_R",
     "CheeksPump" : "47_Puff",
     "FaceTension" : "48_Sneer",
-    "ChinUp" : "08_ChinLowerRaise",
-    "UpperLipUp3" : "09_ChinUpperRaise",
 }
 
 FacePoses = [
@@ -182,6 +182,8 @@ FacePoses = [
     "RightBrowUp",
     "LeftCheekUp",
     "RightCheekUp",
+    "ChinUp",
+    "UpperLipUp3",
     "LeftEyeClose",
     "RightEyeClose",
     "LeftEyeDown",
@@ -199,8 +201,8 @@ FacePoses = [
     "JawClosedOffset",
     "JawMoveForward",
     "JawMoveLeft",
-    "JawMoveRight",
     "JawOpen",
+    "JawMoveRight",
     "LipsOpenKiss",
     "LowerLipsUp",
     "LowerLipsDown",
@@ -218,11 +220,9 @@ FacePoses = [
     "MouthMoveLeft",
     "MouthMoveRight",
     "MouthLeftSmile3",
-    "MouthRighSmile3",
+    "MouthRightSmile3",
     "CheeksPump",
     "FaceTension",
-    "ChinUp",
-    "UpperLipUp3"
 ]
 
 BodyPoses = [
@@ -314,6 +314,13 @@ def saveAction(context, filepath):
         except IndexError:
             print ("Datapath '%s'" % fcu.data_path)
             continue
+        if bname in ["neck", "neck2"]:
+            continue
+        try:
+            rig.data.bones[bname]
+        except KeyError:
+            print("Bone %s not found" % bname)
+            continue
         fcurves[bname] = {}
         affected[bname] = {}
         afcurves.append(fcu)
@@ -345,13 +352,14 @@ def saveAction(context, filepath):
                 fcus = fcurves[bname]
                 if t in aff.keys():
                     try:
-                        quat = [fcus[idx][t-1] for idx in range(4)]
+                        quat = [fcus[idx][t] for idx in range(4)]
                         quats[bname] = quat
                     except IndexError:
                         print(bname, aff, t)
                         halt
 
     io_json.saveJson(struct, filepath, maxDepth=0)
+
 
 #------------------------------------------------------------------------
 #    Rig
@@ -451,6 +459,19 @@ def makeChildren(parent):
     return hier
 
 
+ManualHeads = {
+    'root' : ('o', ('pelvis', (0,0,-1))),
+    'special02' : ('vl', ((0.5, 5577), (0.5,12174))),
+}
+
+ManualTails = {
+    'foot.L' : ('vl', ((0.5, 16839), (0.5,16851))),
+    'foot.R' : ('vl', ((0.5, 15535), (0.5,15547))),
+    'special01' : ('vl', ((0.5, 317), (0.5,343))),
+    #'special04' : ('vl', ((0.5, 5213), (0.5,11823))),
+    #'oris05' : ('vl', ((0.75, 466), (0.25,467))),
+}
+
 def writeJoints(fp, rig, ob, scn):
     fp.write("\nJoints = [\n")
 
@@ -475,41 +496,93 @@ def writeJoints(fp, rig, ob, scn):
     tjoints = {}
     for eb in rig.data.edit_bones:
         bname = getBoneName(eb)
-        jname = findJoint(eb.head, joints)
-        if jname:
-            hjoints[bname] = jname
-
         if (eb.parent and
-              (eb.use_connect or distance(eb.head, eb.parent.tail) < 1e-3)):
-            connects[bname] = getBoneName(eb.parent)
-        elif not jname:
-            hv = findVertex(eb.head, ob.data.vertices)
-            if hv:
-                hdloc = ("  ('%s_hd', 'v', %d),\n" % (bname, hv.index))
-                fp.write(hdloc)
+            (eb.use_connect or distance(eb.head, eb.parent.tail) < 1e-3)):
+            pname = getBoneName(eb.parent)
+            hjoints[bname] = getTailLoc(pname, tjoints)
+            connects[bname] = pname
+        else:
+            jname1,jname2 = findJoints(eb.name, eb.head, joints)
+            if jname2 is None:
+                hjoints[bname] = jname1
+            else:
+                hv = findVertex(eb.head, ob.data.vertices)
+                if hv:
+                    hjoints[bname] = ('%s_hd' % bname)
+                    fp.write("  ('%s_hd', 'v', %d),\n" % (bname, hv.index))
+                elif bname in ManualHeads.keys():
+                    hjoints[bname] = ('%s_hd' % bname)
+                    type,value = ManualHeads[bname]
+                    if isinstance(value,str):
+                        value = ("'%s'" % value)
+                    fp.write("  ('%s_hd', '%s', %s),\n" % (bname, type, value))
+                else:
+                    print("Head:", bname)
+                    ignores.append(bname)
 
-        jname = findJoint(eb.tail, joints)
-        if jname:
-            tjoints[bname] = jname
+        jname1,jname2 = findJoints(eb.name, eb.tail, joints)
+        if jname2 is None:
+            tjoints[bname] = jname1
         else:
             tv = findVertex(eb.tail, ob.data.vertices)
             if tv:
-                tlloc = ("  ('%s_tl', 'v', %d),\n" % (bname, tv.index))
+                fp.write("  ('%s_tl', 'v', %d),\n" % (bname, tv.index))
+                tjoints[bname] = ('%s_tl' % bname)
+            elif bname in ManualTails.keys():
+                tjoints[bname] = ('%s_tl' % bname)
+                type,value = ManualTails[bname]
+                if isinstance(value,str):
+                    value = ("'%s'" % value)
+                fp.write("  ('%s_tl', '%s', %s),\n" % (bname, type, value))
+                tjoints[bname] = ('%s_tl' % bname)
             elif len(eb.children) == 1:
                 child = eb.children[0]
-                frac = eb.length / (eb.length + child.length)
-                dolast.append((bname, getBoneName(child), frac))
-                tlloc = None
+                dolast.append((bname, child.name, eb.head, eb.tail, child.tail))
             else:
+                print("Tail:", bname)
                 ignores.append(bname)
-            if tlloc:
-                fp.write(tlloc)
 
-    for bname, cname, frac in dolast:
-        hloc = getHeadLoc(bname, hjoints, connects)
-        tloc = getTailLoc(bname, tjoints)
-        fp.write("  ('%s_tl', 'l', ((%.4f, '%s'), (%.4f, '%s'))),\n" %
-            (bname, 1-frac, hloc, frac, tloc))
+    print("On line:")
+    fp.write("\n")
+    for bname,cname,bhead,btail,ctail in dolast:
+        hj = hjoints[bname]
+        try:
+            tj = tjoints[cname]
+        except KeyError:
+            tj = None
+            print("No tail:", bname, cname)
+        vec1 = btail - bhead
+        vec2 = ctail - bhead
+        frac = vec1.length / vec2.length
+        offset = (vec1 - frac*vec2) / vec2.length
+
+        if bname == 'clavicle.L':
+            print(bname)
+            print(bhead)
+            print(btail)
+            print(cname)
+            print(ctail)
+            print(vec1)
+            print(vec2)
+            print(frac)
+            print(offset)
+
+        if offset.length > 1e-3:
+            #print("Unaligned:", bname, cname,vec1, vec2, norm)
+            x,y,z = offset
+            fp.write(
+            "  ('%s_tl0', 'l', ((%.4f, '%s'), (%.4f, '%s'))),\n" %
+                (bname, 1-frac, hj, frac, tj) +
+            "  ('%s_tl', 'so', ('%s_tl0', '%s', '%s', (%.4f, %.4f, %.4f))),\n" %
+                (bname, bname, hj, tj, x, z, -y)
+            )
+        else:
+            print("H %s, T %s, %f" % (bname, cname, frac))
+            fp.write(
+            "  ('%s_tl', 'l', ((%.4f, '%s'), (%.4f, '%s'))),\n" %
+                (bname, 1-frac, hjoints[bname], frac, tjoints[cname])
+            )
+        tjoints[bname] = ('%s_tl' % bname)
 
     fp.write("\n]\n")
     return hjoints, tjoints, ignores, connects
@@ -533,14 +606,15 @@ def getTailLoc(bname, tjoints):
         return ('%s_tl' % bname)
 
 
-def findJoint(co, joints):
-    minDist = 0.05
-    best = None
-    for name,jco in joints.items():
-        if distance(co, jco) < minDist:
-            minDist = distance(co, jco)
-            best = name
-    return best
+def findJoints(bname, co, joints, minDist=0.05):
+    dists = []
+    for jname,jco in joints.items():
+        dists.append((distance(co, jco), jname))
+    dists.sort()
+    if abs(dists[0][0]) < minDist:
+        return (dists[0][1], None)
+    else:
+        return (dists[0][1], dists[1][1])
 
 
 def distance(co1, co2):
@@ -573,16 +647,17 @@ def writeHeadsTails(fp, rig, hjoints, tjoints, connects):
 
 def writeArmature(fp, hier, rig, ignores):
     fp.write("\nArmature = {\n")
-    writeHierarchy(fp, hier, None, rig, ignores)
+    writeHierarchy(fp, hier, None, rig, ignores, False)
     fp.write("\n}\n")
 
 
-def writeHierarchy(fp, hier, parent, rig, ignores):
+def writeHierarchy(fp, hier, parent, rig, ignores, inface):
     bone,children = hier
     if parent:
         pstring = "'%s'" % getBoneName(parent)
     else:
         pstring = "None"
+        fp.write("\n")
     if bone:
         bname = getBoneName(bone)
         if bone.use_connect:
@@ -594,9 +669,16 @@ def writeHierarchy(fp, hier, parent, rig, ignores):
         else:
             roll = rig.data.edit_bones[bone.name].roll
         if bname not in ignores:
-            fp.write("  '%s' : (%.3f, %s, F_DEF%s, L_HEAD),\n" % (bname, roll, pstring, conn))
+            if bname in ["head", "neck", "neck2", "eye.L", "eye.R"]:
+                layer = "L_HEAD"
+                inface = True
+            elif inface:
+                layer = "L_FACE"
+            else:
+                layer = "L_MAIN"
+            fp.write("  '%s' : (%.3f, %s, F_DEF%s, %s),\n" % (bname, roll, pstring, conn, layer))
     for child in children:
-        writeHierarchy(fp, child, bone, rig, ignores)
+        writeHierarchy(fp, child, bone, rig, ignores, inface)
 
 
 def defineJoints(ob):
@@ -734,5 +816,6 @@ def defineJoints(ob):
         for n in range(8):
             vsum += ob.data.vertices[vn0+n].co
         joints[name] = vsum/8
+        print(name, vn0, vn0+7, joints[name])
         vn0 += 8
     return joints
