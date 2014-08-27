@@ -372,8 +372,7 @@ def saveAction(context, filepath):
                         quat = [fcus[idx][t] for idx in range(4)]
                         quats[bname] = quat
                     except IndexError:
-                        print(bname, aff, t)
-                        halt
+                        raise RuntimeError("Bug saveAction %s %s %s" % (bname, aff, t))
 
     io_json.saveJson(struct, filepath, maxDepth=0)
 

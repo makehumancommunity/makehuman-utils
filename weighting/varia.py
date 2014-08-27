@@ -377,7 +377,7 @@ def createHairRig(ob):
                     mid = (v1.co+v2.co)/2
                     terminals.append((mid,vn1,vn2))
             if len(terminals) != 2:
-                halt
+                raise RuntimeError("Bug: len terminals = %d" % len(terminals))
             head,tail = terminals
             if head[0][2] < tail[0][2]:
                 tail,head = terminals
