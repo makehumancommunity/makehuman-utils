@@ -165,6 +165,7 @@ def getBonesData(basemesh, armature):
         boneData["head"] = '{0}_head'.format(bone.name)
         boneData["tail"] = '{0}_tail'.format(bone.name)
         boneData["roll"] = bone.roll
+        boneData["reference"] = None
         if bone.parent:
             boneData["parent"] = '{0}'.format(bone.parent.name)
         else:
