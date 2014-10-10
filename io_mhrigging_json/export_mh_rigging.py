@@ -42,6 +42,7 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.types import Operator, Panel
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from . shared_mh_rigging import *
+import os
 
 
 def boneToVertex(basemesh, point):
@@ -365,18 +366,35 @@ def writeRiggingFile(context, filepath):
 
     bones = getBonesData(basemesh, armature)
     joints = getJointsData(basemesh, armature)
-    weights = getWeightsData(basemesh, armature)
+    weights = getWeightsData(basemesh, armature)    
 
-    data = {}
-    data["name"] = "MakeHuman base skeleton"
-    data["version"] = VERSION #102 means 1.0.2
-    data["copyright"] = "MakeHuman, GPL"
-    data["description"] = "Very cool general-purpose skeleton"
-    data["joints"] =  joints
-    data["bones"] =  bones
-    data["weights"] =  weights
-    with open(filepath, 'w') as outfile:
-        json.dump(data, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+    weightsFilePath = os.path.splitext(filepath)[0]+"_weights.jsonw"
+    weightsFile = os.path.basename(weightsFilePath)
+
+    dataArmature = {}
+    dataArmature["name"] = "MakeHuman skeleton"
+    dataArmature["version"] = VERSION #102 means 1.0.2
+    dataArmature["copyright"] = "MakeHuman, GPL"
+    dataArmature["description"] = "Very cool general-purpose skeleton"
+    dataArmature["joints"] =  joints
+    dataArmature["bones"] =  bones
+    dataArmature["weights_file"] = weightsFile
+    
+    dataWeights = {}
+    dataWeights["name"] = "MakeHuman weights"
+    dataWeights["version"] = VERSION #102 means 1.0.2
+    dataWeights["copyright"] = "MakeHuman, GPL"
+    dataWeights["description"] = "Very cool general-purpose skeleton"
+    dataWeights["weights"] =  weights
+    
+    
+    outfile = open(filepath, 'w')
+    json.dump(dataArmature, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+    outfile.close()
+        
+    outfile = open(weightsFilePath, 'w')
+    json.dump(dataWeights, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+    outfile.close()
 
     #Restore the initial active object
     bpy.context.scene.objects.active = basemesh
