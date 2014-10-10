@@ -245,13 +245,11 @@ def vertsindexToCentroid(vertIndexList):
         
     return centroid(vertices)
 
-def getMakeHumanObject(test = "NO_CLOTH_HELPERS_TEST"):
+def isHumanMesh(object, test):
     """
     This function do a weak check of the selection, in order to be sure
     it's the makehuman base mesh.
-    """
-
-    activeObject = bpy.context.object
+    """   
     
     # When we import, it's possible to load the armature on the 
     # naked base mesh (body + joint helpers). In that case the check 
@@ -260,19 +258,38 @@ def getMakeHumanObject(test = "NO_CLOTH_HELPERS_TEST"):
     # helpers. In that case the check should consider the num of 
     # vertices including the clothes helpers. 
     
+    if object == None:
+        return None
     if test == "NO_CLOTH_HELPERS_TEST":
         numOfVerts = MIN_NUM_OF_VERS
     else:
         numOfVerts = FULL_NUM_OF_VERS
-    if activeObject.type == "MESH":  
-        if len(activeObject.data.vertices) < MIN_NUM_OF_VERS: 
-            print("The selected mesh has a wrong number of verts")
+    if object.type == "MESH":  
+        if len(object.data.vertices) < MIN_NUM_OF_VERS:             
             return None
         else:
-            return bpy.context.object
+            return object
     else:
-        print("The selected object is not a mesh")
         return None
+    
+def getMakeHumanObject(test = "NO_CLOTH_HELPERS_TEST"):
+    """
+    If a makehuman mesh is selected or active, this function will return it.
+    """
+
+    activeObject = bpy.context.object
+    selectedObjects = bpy.context.selected_objects    
+    
+    if isHumanMesh(activeObject,test):
+        return activeObject
+    else:
+        for obj in selectedObjects:
+            if isHumanMesh(obj,test):
+                return obj
+    print("The selected object is not a valid makehuman mesh")
+     
+            
+    
 
 
 class UI_messagebox(Operator):
@@ -285,3 +302,4 @@ class UI_messagebox(Operator):
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
+
