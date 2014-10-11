@@ -374,7 +374,7 @@ def writeRiggingFile(context, filepath):
     dataArmature = {}
     dataArmature["name"] = "MakeHuman skeleton"
     dataArmature["version"] = VERSION #102 means 1.0.2
-    dataArmature["copyright"] = "MakeHuman, GPL"
+    dataArmature["copyright"] = "(c) Makehuman.org 2014"
     dataArmature["license"] = "GNU Affero General Public License 3"
     dataArmature["description"] = "Very cool general-purpose skeleton"
     dataArmature["joints"] =  joints
@@ -384,7 +384,7 @@ def writeRiggingFile(context, filepath):
     dataWeights = {}
     dataWeights["name"] = "MakeHuman weights"
     dataWeights["version"] = VERSION #102 means 1.0.2
-    dataWeights["copyright"] = "MakeHuman, GPL"
+    dataWeights["copyright"] = "(c) Makehuman.org 2014"
     dataWeights["description"] = "Very cool general-purpose skeleton"
     dataWeights["license"] = "GNU Affero General Public License 3"
     dataWeights["weights"] =  weights
