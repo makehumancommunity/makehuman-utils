@@ -8,80 +8,74 @@ def createArmatureFromJsonFile(filePath):
     with open(filePath) as dataFile:
         armatureData = json.load(dataFile)
 
-    basemesh = getMakeHumanObject()
-    if "version" in armatureData:
-        if armatureData['version'] > 99 and basemesh != None:
+    basemesh = getObject()       
+    joints = armatureData['joints']
+    name = armatureData['name']
+    jointCoordinates = {}
+    bones = armatureData['bones']
+    #weights = armatureData['weights']
 
-            print("Rigging file version: {0}".format(armatureData['version']))
+    if "weights_file" in armatureData:
+        weightsFileName = armatureData["weights_file"]
+        weightsFilePath = os.path.join(os.path.dirname(filePath),weightsFileName)
+        weightsFile = open(weightsFilePath)
+        weightsData = json.load(weightsFile)
+        weights = weightsData['weights']
+        weightsFile.close()
 
-            joints = armatureData['joints']
-            name = armatureData['name']
-            jointCoordinates = {}
-            bones = armatureData['bones']
-            #weights = armatureData['weights']
+        for group, weights in weights.items():
+            newGroup = basemesh.vertex_groups.new(group)
+            for weightData in weights:
+                newGroup.add([weightData[0]], weightData[1], 'REPLACE')
 
-            weightsFileName = armatureData["weights_file"]
-            weightsFilePath = os.path.join(os.path.dirname(filePath),weightsFileName)
-            weightsFile = open(weightsFilePath)
-            weightsData = json.load(weightsFile)
-            weights = weightsData['weights']
-            weightsFile.close()
+    for joint, vertices in joints.items():        
+        jointCoordinates[joint] = vertsindexToCentroid(vertices)
 
-            for group, weights in weights.items():
-                newGroup = basemesh.vertex_groups.new(group)
-                for weightData in weights:
-                    newGroup.add([weightData[0]], weightData[1], 'REPLACE')
+    bpy.ops.object.add(
+        type='ARMATURE',
+        enter_editmode=True,
+        location=(0,0,0))
 
-            for joint, vertices in joints.items():
-                jointCoordinates[joint] = vertsindexToCentroid(vertices)
+    newArmature = bpy.context.object
+    newArmature.name = name
+    newArmature.show_name = True
+    amt = newArmature.data
+    amt.name = name+'Amt'
 
-            bpy.ops.object.add(
-                type='ARMATURE',
-                enter_editmode=True,
-                location=(0,0,0))
+    for boneKey, boneData in bones.items():
+            # Create single bone
+            newBone = amt.edit_bones.new('Bone')
+            headKey = boneData['head']
+            tailKey = boneData['tail']
+            rollAngle = boneData['roll']
 
-            newArmature = bpy.context.object
-            newArmature.name = name
-            newArmature.show_name = True
-            amt = newArmature.data
-            amt.name = name+'Amt'
+            headCoords = jointCoordinates[headKey]
+            tailCoords = jointCoordinates[tailKey]
 
-            for boneKey, boneData in bones.items():
-                    # Create single bone
-                    newBone = amt.edit_bones.new('Bone')
-                    headKey = boneData['head']
-                    tailKey = boneData['tail']
-                    rollAngle = boneData['roll']
+            newBone.name = boneKey
+            newBone.head = headCoords
+            newBone.tail = tailCoords
+            newBone.roll = rollAngle
 
-                    headCoords = jointCoordinates[headKey]
-                    tailCoords = jointCoordinates[tailKey]
+    for boneName, boneData in bones.items():
+        parentName = boneData['parent']
+        if parentName != None:
+            amt.edit_bones[boneName].parent = amt.edit_bones[parentName]
 
-                    newBone.name = boneKey
-                    newBone.head = headCoords
-                    newBone.tail = tailCoords
-                    newBone.roll = rollAngle
+    bpy.ops.object.mode_set(mode='OBJECT')
 
-            for boneName, boneData in bones.items():
-                parentName = boneData['parent']
-                if parentName != None:
-                    amt.edit_bones[boneName].parent = amt.edit_bones[parentName]
-
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-            # Give basemesh object an armature modifier, using vertex groups but
-            # not envelopes
-            mod = basemesh.modifiers.new('MyRigModif', 'ARMATURE')
-            mod.object = newArmature
-            mod.use_bone_envelopes = False
-            mod.use_vertex_groups = True
-            basemesh.parent = newArmature
-            return newArmature
-    else:
-        return None
+    # Give basemesh object an armature modifier, using vertex groups but
+    # not envelopes
+    mod = basemesh.modifiers.new('MyRigModif', 'ARMATURE')
+    mod.object = newArmature
+    mod.use_bone_envelopes = False
+    mod.use_vertex_groups = True
+    basemesh.parent = newArmature
+    return newArmature
 
 
 def readRiggingFile(context, filepath):
-    if getMakeHumanObject() != None:
+    if getObject() != None:
         createArmatureFromJsonFile(filepath)
     else:
         bpy.ops.box1.message('INVOKE_DEFAULT')

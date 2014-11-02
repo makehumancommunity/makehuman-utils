@@ -247,54 +247,20 @@ def vertsindexToCentroid(vertIndexList):
     vertices = []
     if vertIndexList != None:
         for i in vertIndexList:
-            vertices.append(getMakeHumanObject().data.vertices[i])
+            try:
+                vertices.append(getObject().data.vertices[i])
+            except IndexError:
+                print("Index {0} out of range".format(i))
         
     return centroid(vertices)
 
-def isHumanMesh(object, test):
+    
+def getObject():
     """
-    This function do a weak check of the selection, in order to be sure
-    it's the makehuman base mesh.
-    """   
-    
-    # When we import, it's possible to load the armature on the 
-    # naked base mesh (body + joint helpers). In that case the check 
-    # should consider the num of vertices without helpers.
-    # But when we export, we should have all, including the clothes
-    # helpers. In that case the check should consider the num of 
-    # vertices including the clothes helpers. 
-    
-    if object == None:
-        return None
-    if test == "NO_CLOTH_HELPERS_TEST":
-        numOfVerts = MIN_NUM_OF_VERS
-    else:
-        numOfVerts = FULL_NUM_OF_VERS
-    if object.type == "MESH":  
-        if len(object.data.vertices) < MIN_NUM_OF_VERS:             
-            return None
-        else:
-            return object
-    else:
-        return None
-    
-def getMakeHumanObject(test = "NO_CLOTH_HELPERS_TEST"):
+    Return the active object
     """
-    If a makehuman mesh is selected or active, this function will return it.
-    """
-
-    activeObject = bpy.context.object
-    selectedObjects = bpy.context.selected_objects    
-    
-    if isHumanMesh(activeObject,test):
-        return activeObject
-    else:
-        for obj in selectedObjects:
-            if isHumanMesh(obj,test):
-                return obj
-    print("The selected object is not a valid makehuman mesh")
-     
-            
+    activeObject = bpy.context.object       
+    return activeObject           
     
 
 

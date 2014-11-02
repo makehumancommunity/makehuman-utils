@@ -237,7 +237,10 @@ def getJointsData(basemesh, armature):
     for jointIndices in JOINTS_VERT_INDICES:
         vertices = []
         for index in jointIndices:
-            vertices.append(basemesh.data.vertices[index])
+            try:
+                vertices.append(basemesh.data.vertices[index])
+            except:
+                print("Vert n. {0} not found for centroid calculation. Probably you are exporting a mesh that's not the base human".format(index))
         jointCentroids.append(centroid(vertices))
 
     for bone in armature.data.edit_bones:
@@ -346,12 +349,12 @@ def writeRiggingFile(context, filepath):
     filepath: The path of file to save.
     
     """
-    basemesh = getMakeHumanObject("YES_CLOTH_HELPER_TEST") 
+    basemesh = getObject() 
      
     
-    if basemesh == None: 
-        bpy.ops.box1.message('INVOKE_DEFAULT')
-        return {'FINISHED'}
+    #if basemesh == None: 
+        #bpy.ops.box1.message('INVOKE_DEFAULT')
+        #return {'FINISHED'}
         
     armature = basemesh.parent  
     if armature == None:
@@ -364,6 +367,8 @@ def writeRiggingFile(context, filepath):
     
     bpy.context.scene.objects.active = armature
 
+    numVertices = len(basemesh.data.vertices)
+    numFaces = len(basemesh.data.polygons)
     bones = getBonesData(basemesh, armature)
     joints = getJointsData(basemesh, armature)
     weights = getWeightsData(basemesh, armature)    
@@ -379,6 +384,8 @@ def writeRiggingFile(context, filepath):
     dataArmature["description"] = "Very cool general-purpose skeleton"
     dataArmature["joints"] =  joints
     dataArmature["bones"] =  bones
+    dataArmature["num_of_faces"] =  numFaces
+    dataArmature["num_of_vertices"] =  numVertices
     dataArmature["weights_file"] = weightsFile
     
     dataWeights = {}
