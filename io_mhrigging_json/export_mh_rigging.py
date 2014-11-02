@@ -350,7 +350,13 @@ def writeRiggingFile(context, filepath):
     
     """
     basemesh = getObject() 
-        
+    
+    if basemesh == None: 
+        print("No mesh selected")
+        bpy.ops.box1.message('INVOKE_DEFAULT')
+        return {'FINISHED'}
+
+  
     armature = basemesh.parent  
     if armature == None:
         print("The selected mesh is not parented with an armature")
@@ -370,7 +376,7 @@ def writeRiggingFile(context, filepath):
     weightsFile = os.path.basename(weightsFilePath)
 
     dataArmature = {}
-    dataArmature["name"] = "MakeHuman skeleton"
+    dataArmature["name"] = basemesh.name
     dataArmature["version"] = VERSION #102 means 1.0.2
     dataArmature["copyright"] = "(c) Makehuman.org 2014"
     dataArmature["license"] = "GNU Affero General Public License 3"
