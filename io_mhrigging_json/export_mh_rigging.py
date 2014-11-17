@@ -163,8 +163,8 @@ def getBonesData(basemesh, armature):
     bones = {}
     for bone in armature.data.edit_bones:
         boneData = {}
-        boneData["head"] = '{0}_head'.format(bone.name)
-        boneData["tail"] = '{0}_tail'.format(bone.name)
+        boneData["head"] = '{0}____head'.format(bone.name)
+        boneData["tail"] = '{0}____tail'.format(bone.name)
         boneData["roll"] = bone.roll
         boneData["reference"] = None
         if bone.parent:
@@ -269,24 +269,24 @@ def getJointsData(basemesh, armature):
         # Looking for the closer helper centroid. If fails, look for the closer vert.
 
         if closerHead[0] > DELTAMIN:
-            joints['{0}_head'.format(bone.name)] = boneToVertex(basemesh, bone.head)
+            joints['{0}____head'.format(bone.name)] = boneToVertex(basemesh, bone.head)
         else:
-            joints['{0}_head'.format(bone.name)] = closerHead[1]
+            joints['{0}____head'.format(bone.name)] = closerHead[1]
 
         if closerTail[0] > DELTAMIN:
-            joints['{0}_tail'.format(bone.name)] = boneToVertex(basemesh, bone.tail)
+            joints['{0}____tail'.format(bone.name)] = boneToVertex(basemesh, bone.tail)
         else:
-            joints['{0}_tail'.format(bone.name)] = closerTail[1]
+            joints['{0}____tail'.format(bone.name)] = closerTail[1]
 
     # If after the loops above, the status is still None, the function
     # look for the interpolation of the connected head and tails.
     for k, v in joints.items():
         if v == None:
-
+            #print (k)
             # Retrieve the info about missed joint from the key
 
-            boneName = k.split("_")[0]
-            jointType = k.split("_")[1]
+            boneName = k.split("____")[0]
+            jointType = k.split("____")[1]
             bone = bpy.context.object.data.edit_bones[boneName]
 
             # Retrieve the info of the connected bones and their centroids
@@ -294,14 +294,14 @@ def getJointsData(basemesh, armature):
             if jointType == "head":
                 jointToRecalculate = bone.head
                 if bone.parent:
-                    centroid1Key = '{0}_tail'.format(bone.name)
-                    centroid2Key = '{0}_head'.format(bone.parent.name)
+                    centroid1Key = '{0}____tail'.format(bone.name)
+                    centroid2Key = '{0}____head'.format(bone.parent.name)
 
             elif jointType == "tail":
                 jointToRecalculate = bone.tail
                 if len(bone.children) != 0:
-                    centroid1Key = '{0}_head'.format(bone.name)
-                    centroid2Key = '{0}_tail'.format(bone.children[0].name)
+                    centroid1Key = '{0}____head'.format(bone.name)
+                    centroid2Key = '{0}____tail'.format(bone.children[0].name)
 
             # Check if the connected joints are already mapped and then
             # interpolates them
