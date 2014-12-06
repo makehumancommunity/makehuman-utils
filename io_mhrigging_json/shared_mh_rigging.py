@@ -259,9 +259,16 @@ def getObject():
     """
     Return the active object
     """
-    activeObject = bpy.context.object       
-    return activeObject           
+    if len(bpy.context.selected_objects) > 0:
+        
+        #Get latest selected obj and make it the active one
+        bpy.context.scene.objects.active = bpy.context.selected_objects[0]
     
+        activeObject = bpy.context.object       
+        return activeObject  
+    else:
+        print("No object selected")
+        return None
 
 
 class UI_messagebox(Operator):
