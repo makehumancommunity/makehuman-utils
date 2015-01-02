@@ -282,15 +282,33 @@ def getJointsData(basemesh, armature):
     # look for the interpolation of the connected head and tails.
     for k, v in joints.items():
         if v == None:
-            #print (k)
+            #print ("DEBUG " + k)
             # Retrieve the info about missed joint from the key
 
             boneName = k.split("____")[0]
             jointType = k.split("____")[1]
+            
             bone = bpy.context.object.data.edit_bones[boneName]
 
             # Retrieve the info of the connected bones and their centroids
-
+            # If we have a missed head, it calculate the average coordinates
+            # of the bone tail and his parent head, in order to verify if they 
+            # can be used to approssimate the joint position:
+            #
+            #     |\          |\
+            #  h1 | | t1   h2 | | t2   
+            #     |/          |/
+            #
+            #  Perhaps h2 = (h1+t2)/2
+            #
+            #  Why we don't get simply the t1 (parent's tail)?
+            #  Because often t1 = h2 = missed helpers
+            #
+            #  We do a similar thing in case of a missed tail.
+            
+            centroid1Key = None
+            centroid2Key = None
+            
             if jointType == "head":
                 jointToRecalculate = bone.head
                 if bone.parent:
@@ -305,21 +323,22 @@ def getJointsData(basemesh, armature):
 
             # Check if the connected joints are already mapped and then
             # interpolates them
+            
+            if centroid1Key in joints and centroid2Key in joints:
+                if joints[centroid1Key] != None and joints[centroid2Key] != None:
+                    centroid1= joints[centroid1Key]
+                    centroid2= joints[centroid2Key]
+                    vertices = []
+                    for index in centroid1:
+                        vertices.append(basemesh.data.vertices[index])
+                    for index in centroid2:
+                        vertices.append(basemesh.data.vertices[index])
 
-            if joints[centroid1Key] != None and joints[centroid2Key] != None:
-                centroid1= joints[centroid1Key]
-                centroid2= joints[centroid2Key]
-                vertices = []
-                for index in centroid1:
-                    vertices.append(basemesh.data.vertices[index])
-                for index in centroid2:
-                    vertices.append(basemesh.data.vertices[index])
+                    # If the interpolated centroid is close enough to the joint,
+                    # it's mapped to the vertices of both the connected elements.
 
-                # If the interpolated centroid is close enough to the joint,
-                # it's mapped to the vertices of both the connected elements.
-
-                if vdist(centroid(vertices),jointToRecalculate) < DELTAMIN :
-                    joints[k] = centroid1 + centroid2
+                    if vdist(centroid(vertices),jointToRecalculate) < DELTAMIN :
+                        joints[k] = centroid1 + centroid2
 
         # If, after the checks above, the value is still missed, print
         # a warning and try to get it from the dictionary written by hand.
