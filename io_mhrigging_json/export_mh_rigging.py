@@ -134,9 +134,10 @@ def getWeightsData(basemesh, armature):
 def getBonesData(basemesh, armature):
     """
     This function extract the main informations of each bone,
-    (bone name, head name, tail name, roll angle, parent name)
-    and return them as dictinary, ready to be written
-    in json format.
+    (bone name, head name, tail name, rotation plane, parent name)
+    and return them as dictionary, ready to be written
+    in json format. It also creates an empty dictionary of
+    rotation planes, to be filled by hand, atm.
     
     Parameters
     ----------
@@ -161,21 +162,24 @@ def getBonesData(basemesh, armature):
     # Create and populate the dictionary.
 
     bones = {}
+    rot_planes = {}
     for bone in armature.data.edit_bones:
         boneData = {}
         boneData["head"] = '{0}____head'.format(bone.name)
         boneData["tail"] = '{0}____tail'.format(bone.name)
-        boneData["roll"] = bone.roll
+        boneData["rotation_plane"] = '{0}____plane'.format(bone.name)
+        #boneData["roll"] = bone.roll
         boneData["reference"] = None
         if bone.parent:
             boneData["parent"] = '{0}'.format(bone.parent.name)
         else:
             boneData["parent"] = None
         bones[bone.name] = boneData
+        rot_planes['{0}____plane'.format(bone.name)] = [None, None, None] #This data will be filled by hand in the exported file.
 
     # Restore the initial mode
     bpy.ops.object.mode_set(mode=objectMode)
-    return bones
+    return bones, rot_planes
 
 
 def getJointsData(basemesh, armature):
@@ -387,7 +391,7 @@ def writeRiggingFile(context, filepath):
     
     bpy.context.scene.objects.active = armature
 
-    bones = getBonesData(basemesh, armature)
+    bones, rot_planes = getBonesData(basemesh, armature)
     joints = getJointsData(basemesh, armature)
     weights = getWeightsData(basemesh, armature)    
 
@@ -402,6 +406,7 @@ def writeRiggingFile(context, filepath):
     dataArmature["description"] = "Very cool general-purpose skeleton"
     dataArmature["joints"] =  joints
     dataArmature["bones"] =  bones
+    dataArmature["planes"] =  rot_planes
     dataArmature["weights_file"] = weightsFile
     
     dataWeights = {}
