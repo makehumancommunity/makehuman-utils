@@ -35,6 +35,7 @@ Export a json file with a rigging designed upon the makehuman base mesh.
 import math
 import bpy
 from bpy.types import Operator
+import mathutils
 
 VERSION = 102
 DELTAMIN = 0.01
@@ -280,4 +281,19 @@ class UI_messagebox(Operator):
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
+
+def get_plane_coords(plane_joints, jointCoordinates):
+    v1 = jointCoordinates[plane_joints[0]]
+    v2 = jointCoordinates[plane_joints[1]]
+    v3 = jointCoordinates[plane_joints[2]]
+    return [v1, v2, v3]
+
+def get_normal(plane_verts):
+    v1 = mathutils.Vector(plane_verts[0])
+    v2 = mathutils.Vector(plane_verts[1])
+    v3 = mathutils.Vector(plane_verts[2])
+
+    pvec = (v2-v1).normalized()
+    yvec = (v3-v2).normalized()
+    return yvec.cross(pvec).normalized()
 

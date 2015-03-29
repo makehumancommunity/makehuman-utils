@@ -13,6 +13,7 @@ def createArmatureFromJsonFile(filePath):
     name = armatureData['name']
     jointCoordinates = {}
     bones = armatureData['bones']
+    planes = armatureData['planes']
     #weights = armatureData['weights']
 
     if "weights_file" in armatureData:
@@ -47,7 +48,7 @@ def createArmatureFromJsonFile(filePath):
             newBone = amt.edit_bones.new('Bone')
             headKey = boneData['head']
             tailKey = boneData['tail']
-            rollAngle = boneData['roll']
+            rollPlane = boneData["rotation_plane"]
 
             headCoords = jointCoordinates[headKey]
             tailCoords = jointCoordinates[tailKey]
@@ -55,7 +56,13 @@ def createArmatureFromJsonFile(filePath):
             newBone.name = boneKey
             newBone.head = headCoords
             newBone.tail = tailCoords
-            newBone.roll = rollAngle
+            #newBone.roll = ...
+            # Set the roll using a reference plane
+            plane = planes[rollPlane]
+            plane_coords = get_plane_coords(plane, jointCoordinates)
+            normal = get_normal(plane_coords)
+            z_axis = newBone.y_axis.cross(normal)
+            newBone.align_roll(z_axis)
 
     for boneName, boneData in bones.items():
         parentName = boneData['parent']
