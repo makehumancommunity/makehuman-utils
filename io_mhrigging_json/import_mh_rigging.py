@@ -71,6 +71,13 @@ def createArmatureFromJsonFile(filePath):
 
     bpy.ops.object.mode_set(mode='OBJECT')
 
+    # Copy mesh rotation to skeleton
+    # (Usually rotates rig to Z-up axis system, depending on OBJ importer config)
+    basemesh.rotation_mode = 'XYZ'
+    newArmature.rotation_mode = 'XYZ'
+    newArmature.rotation_euler = basemesh.rotation_euler
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+
     # Give basemesh object an armature modifier, using vertex groups but
     # not envelopes
     mod = basemesh.modifiers.new('MyRigModif', 'ARMATURE')
