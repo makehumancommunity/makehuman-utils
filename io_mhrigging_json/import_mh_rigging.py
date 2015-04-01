@@ -61,7 +61,7 @@ def createArmatureFromJsonFile(filePath):
             plane = planes[rollPlane]
             plane_coords = get_plane_coords(plane, jointCoordinates)
             normal = get_normal(plane_coords)
-            z_axis = newBone.y_axis.cross(normal)
+            z_axis = normal.cross(newBone.y_axis)
             newBone.align_roll(z_axis)
 
     for boneName, boneData in bones.items():
