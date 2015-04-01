@@ -85,6 +85,10 @@ def createArmatureFromJsonFile(filePath):
     mod.use_bone_envelopes = False
     mod.use_vertex_groups = True
     basemesh.parent = newArmature
+
+    print ("Rig up axis: %s" % guess_up_axis(newArmature.data))
+    bpy.ops.object.mode_set(mode='OBJECT')
+
     return newArmature
 
 

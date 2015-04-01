@@ -297,3 +297,23 @@ def get_normal(plane_verts):
     yvec = (v3-v2).normalized()
     return yvec.cross(pvec).normalized()
 
+def guess_up_axis(amt):
+    bpy.ops.object.mode_set(mode='EDIT')
+    bonesum = mathutils.Vector([0,0,0])
+    for bone in amt.edit_bones:
+        direction = bone.y_axis
+        bonesum.x += abs(direction.x)
+        bonesum.y += abs(direction.y)
+        bonesum.z += abs(direction.z)
+    print (bonesum)
+    if bonesum.x > bonesum.y:
+        if bonesum.x > bonesum.z:
+            return 'X'
+        else:
+            return 'Z'
+    else:
+        if bonesum.y > bonesum.z:
+            return 'Y'
+        else:
+            return 'Z'
+
