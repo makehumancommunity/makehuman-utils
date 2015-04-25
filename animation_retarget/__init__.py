@@ -59,19 +59,28 @@ sys.path.append( os.path.dirname(__file__) )
 import animation_retarget_mh
 
 
+# Operator
 class ANIM_OT_retarget_animation_mh(bpy.types.Operator):
     bl_label = 'Retarget (MH)'
     bl_idname = 'anim.retarget_animation_mh'
     bl_description = 'Retarget animation from source to target armature'
+    bl_context = 'objectmode'
     bl_options = {'REGISTER', 'UNDO', 'BLOCKING'}
 
-    src_rig = bpy.props.StringProperty(name="Source rig")
-    trg_rig = bpy.props.StringProperty(name="Target rig")
+    src_rig = bpy.props.StringProperty(name="Source rig", description="Armature object to copy the active animation from", default="")
+    trg_rig = bpy.props.StringProperty(name="Target rig", description="Armature object to transfer the animation to", default="")
 
     def execute(self, context):
         """Transfer current animation from source armature (selected) to the
         target armature (active).
         """
+        if not self.src_rig:
+            self.report({'ERROR'}, "No valid source armature selected." % self.src_rig)
+            return {'FINISHED'}
+        if not self.trg_rig:
+            self.report({'ERROR'}, "No valid target armature selected." % self.trg_rig)
+            return {'FINISHED'}
+
         self.report({'INFO'}, "Retarget animation from %s to %s" % (self.src_rig, self.trg_rig))
         animation_retarget_mh.retarget_animation(bpy.data.objects[self.src_rig], bpy.data.objects[self.trg_rig])
         return {'FINISHED'}
@@ -97,6 +106,43 @@ class ANIM_OT_retarget_animation_mh(bpy.types.Operator):
            context.selected_objects[1].type != "ARMATURE":
             return False
         return True
+
+
+# GUI (Panel)
+class VIEW3D_PT_retarget_animation_mh(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = 'objectmode'
+    bl_category = "Animation"
+    bl_label = 'Retarget (MH)'
+
+    # TODO add bone mapping feature to GUI
+
+    @classmethod
+    def poll(self, context):
+        return ANIM_OT_retarget_animation_mh.poll()
+
+    # draw the gui
+    def draw(self, context):
+        Obj = context.active_object
+        
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row()
+        row.operator('anim.retarget_animation_mh', icon='ARMATURE_DATA')
+
+        try:
+            src_rig, trg_rig = animation_retarget_mh.get_armatures(context)
+
+            col = layout.column(align=True)
+            row = col.row()
+            row.label(src_rig.name, icon='POSE_DATA')
+
+            col = layout.column(align=True)
+            row = col.row()
+            row.label(trg_rig.name, icon='NEXT_KEYFRAME')
+        except:
+            pass
 
 
 def register():
