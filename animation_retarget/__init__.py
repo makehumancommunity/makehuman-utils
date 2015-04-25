@@ -37,16 +37,18 @@ Allows transferring the animation from a BVH file imported in Blender to a MH
 (or other) skeleton.
 Bone names between the two skeletons are matched using fuzzy string matching,
 allowing it to automatically find combinations if bone names are similar.
+
+Usage: First select the source armature (with the animation), then select the target armature (where the animation will be transferred to) as active object.
 """
 
 import bpy
 
 bl_info = {
     'name': 'Animation retarget (MH)',
-    'author': 'Jonas Hauquier',
+    'author': 'Jonas Hauquier (MakeHuman.org)',
     'version': (0,9,1),
     "blender": (2,6,0),
-    'location': "Toolbar > Animation tab > Retarget (MH)",
+    'location': "Toolbar > Animation tab > Retarget (MH), Object mode > spacebar operators menu > Retarget (MH)",
     'description': 'Transfer a pose or animation from one armature (eg a BVH file) to another armature, mapping between bones based on name similarity.',
     'warning': '',
     'wiki_url': '',
