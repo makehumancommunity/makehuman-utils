@@ -334,24 +334,31 @@ class BoneMapping(object):
 
         return mat
 
+def get_armatures(context):
+    trg_rig = context.active_object
+    selected_objs = context.selected_objects[:]
+
+    if not trg_rig or len(selected_objs) != 2 or trg_rig.type != "ARMATURE":
+        raise Exception("Exactly two armatures must be selected. This Addon copies the current animation/pose the selected armature to the active armature.")
+
+    selected_objs.remove(trg_rig)
+    src_rig = selected_objs[0]
+
+    if src_rig.type != "ARMATURE":
+        raise Exception("Exactly two armatures must be selected. This Addon copies the current animation/pose the selected armature to the active armature.")
+
+    return (src_rig, trg_rig)
+
+def retarget_animation(src_rig, trg_rig):
+    r = AnimationRetarget(src_rig, trg_rig)
+    r.retarget(bpy.context.scene, range(10))  # TODO determine how many frames to copy
 
 
-#create a copy of mesh1 (active), but with vertex order of mesh2 (selected)
-trg_rig = bpy.context.active_object
-selected_objs = bpy.context.selected_objects[:]
+def main():
+    src_rig, trg_rig = get_armatures(bpy.context)
+    print ("Retarget animation from %s to %s" % (src_rig.name, trg_rig.name))
+    retarget_animation(src_rig, trg_rig)
 
-if not trg_rig or len(selected_objs) != 2 or trg_rig.type != "ARMATURE":
-    raise Exception("Exactly two armatures must be selected. This Addon copies the current animation/pose the selected armature to the active armature.")
-
-selected_objs.remove(trg_rig)
-src_rig = selected_objs[0]
-
-if src_rig.type != "ARMATURE":
-    raise Exception("Exactly two armatures must be selected. This Addon copies the current animation/pose the selected armature to the active armature.")
-
-
-print ("Retarget animation from %s to %s" % (src_rig.name, trg_rig.name))
-
-r = AnimationRetarget(src_rig, trg_rig)
-r.retarget(bpy.context.scene, range(10))  # TODO determine how many frames to copy
+if __name__ == '__main__':
+    main()
 
