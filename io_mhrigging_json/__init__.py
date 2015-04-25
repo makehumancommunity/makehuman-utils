@@ -48,33 +48,23 @@ bl_info = {
     'category': 'MakeHuman'}
 
 import bpy 
-from . export_mh_rigging import *
-from . import_mh_rigging import *
-
-def menu_func_export(self, context):
-    self.layout.operator(ExportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
-    
-def menu_func_import(self, context):    
-    self.layout.operator(ImportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
+from . import shared_mh_rigging
+from . import export_mh_rigging
+from . import import_mh_rigging
 
             
 def register():
-    bpy.utils.register_class(ExportMHRigging)
-    bpy.utils.register_class(ImportMHRigging)
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-    bpy.utils.register_class(UI_messagebox)
+    shared_mh_rigging.register()
+    export_mh_rigging.register()
+    import_mh_rigging.register()
 
 
 def unregister():
-    bpy.utils.unregister_class(ExportMHRigging)
-    bpy.utils.unregister_class(ImportMHRigging)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    bpy.utils.unregister_class(UI_messagebox) 
+    shared_mh_rigging.unregister()
+    export_mh_rigging.unregister()
+    import_mh_rigging.unregister()
+
 
 if __name__ == "__main__":
     register()
-
-
 

@@ -41,6 +41,7 @@ import json
 from bpy_extras.io_utils import ExportHelper
 from bpy.types import Operator, Panel
 from bpy.props import StringProperty, BoolProperty, EnumProperty
+from . import shared_mh_rigging
 from . shared_mh_rigging import *
 import os
 
@@ -186,7 +187,7 @@ def getJointsData(basemesh, armature):
     """
     An helper joint is a little cube included in the base mesh,
     that is always morphed accordingly the base mesh.
-    Helper joints are used to recalculate the skeleton afte the morphing.
+    Helper joints are used to recalculate the skeleton after the morphing.
     Each helper joint is represented by a list of eight vert indices,
     stored in JOINTS_VERT_INDICES.
 
@@ -442,10 +443,12 @@ from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+def menu_func_export(self, context):
+    self.layout.operator(ExportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
 
 class ExportMHRigging(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "export_rigging.data"  # important since its how bpy.ops.import_rigging.data is constructed
+    bl_idname = "export_mh_rigging.data"  # important since its how bpy.ops.import_rigging.data is constructed
     bl_label = "Export MakeHuman Rigging"
 
     # ImportHelper mixin class uses this
@@ -459,4 +462,16 @@ class ExportMHRigging(Operator, ExportHelper):
     def execute(self, context):        
         return writeRiggingFile(context, self.filepath)       
 
+def register():
+    bpy.utils.register_class(ExportMHRigging)
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
+
+def unregister():
+    bpy.utils.unregister_class(ExportMHRigging)
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+
+
+if __name__ == "__main__":
+    shared_mh_rigging.register()
+    register()
 

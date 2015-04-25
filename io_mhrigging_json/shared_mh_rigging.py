@@ -317,3 +317,9 @@ def guess_up_axis(amt):
         else:
             return 'Z'
 
+def register():
+    bpy.utils.register_class(UI_messagebox)
+
+def unregister():
+    bpy.utils.unregister_class(UI_messagebox)
+

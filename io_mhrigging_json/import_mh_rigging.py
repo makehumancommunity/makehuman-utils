@@ -1,6 +1,7 @@
 import bpy
 import json
 import os
+from . import shared_mh_rigging
 from . shared_mh_rigging import *
 
 def createArmatureFromJsonFile(filePath):
@@ -13,7 +14,8 @@ def createArmatureFromJsonFile(filePath):
     name = armatureData['name']
     jointCoordinates = {}
     bones = armatureData['bones']
-    planes = armatureData['planes']
+    planes = armatureData['planes']  # TODO isnt this called reference_planes?
+    # TODO fix if no planes defined
     #weights = armatureData['weights']
 
     if "weights_file" in armatureData:
@@ -43,26 +45,28 @@ def createArmatureFromJsonFile(filePath):
     amt = newArmature.data
     amt.name = name+'Amt'
 
+    # TODO store information in armature so that we can re-correct rolls after it was modified
     for boneKey, boneData in bones.items():
-            # Create single bone
-            newBone = amt.edit_bones.new('Bone')
-            headKey = boneData['head']
-            tailKey = boneData['tail']
-            rollPlane = boneData["rotation_plane"]
+        # Create single bone
+        newBone = amt.edit_bones.new('Bone')
+        headKey = boneData['head']
+        tailKey = boneData['tail']
+        # TODO fix if plane not specified
+        rollPlane = boneData["rotation_plane"]
 
-            headCoords = jointCoordinates[headKey]
-            tailCoords = jointCoordinates[tailKey]
+        headCoords = jointCoordinates[headKey]
+        tailCoords = jointCoordinates[tailKey]
 
-            newBone.name = boneKey
-            newBone.head = headCoords
-            newBone.tail = tailCoords
-            #newBone.roll = ...
-            # Set the roll using a reference plane
-            plane = planes[rollPlane]
-            plane_coords = get_plane_coords(plane, jointCoordinates)
-            normal = get_normal(plane_coords)
-            z_axis = normal.cross(newBone.y_axis)
-            newBone.align_roll(z_axis)
+        newBone.name = boneKey
+        newBone.head = headCoords
+        newBone.tail = tailCoords
+        #newBone.roll = ...
+        # Set the roll using a reference plane
+        plane = planes[rollPlane]
+        plane_coords = get_plane_coords(plane, jointCoordinates)
+        normal = get_normal(plane_coords)
+        z_axis = normal.cross(newBone.y_axis)
+        newBone.align_roll(z_axis)
 
     for boneName, boneData in bones.items():
         parentName = boneData['parent']
@@ -112,10 +116,12 @@ from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+def menu_func_import(self, context):    
+    self.layout.operator(ImportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
 
 class ImportMHRigging(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "import_rigging.data"  # important since its how bpy.ops.import_rigging.data is constructed
+    bl_idname = "import_mh_rigging.data"  # important since its how bpy.ops.import_rigging.data is constructed
     bl_label = "Import MakeHuman Rigging"
 
     # ImportHelper mixin class uses this
@@ -130,7 +136,16 @@ class ImportMHRigging(Operator, ImportHelper):
         return readRiggingFile(context, self.filepath)
 
 
-if __name__ == "__main__":
-    register()
+def register():
+    bpy.utils.register_class(ImportMHRigging)
+    bpy.types.INFO_MT_file_import.append(menu_func_import)
 
+def unregister():
+    bpy.utils.unregister_class(ImportMHRigging)
+    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+
+
+if __name__ == "__main__":
+    shared_mh_rigging.register()
+    register()
 
