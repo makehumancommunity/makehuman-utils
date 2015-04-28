@@ -121,8 +121,8 @@ class VIEW3D_PT_retarget_animation_mh(bpy.types.Panel):
     # TODO add bone mapping feature to GUI
 
     @classmethod
-    def poll(self, context):
-        return ANIM_OT_retarget_animation_mh.poll()
+    def poll(cls, context):
+        return ANIM_OT_retarget_animation_mh.poll(context)
 
     # draw the gui
     def draw(self, context):
