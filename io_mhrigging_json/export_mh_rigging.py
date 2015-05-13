@@ -72,12 +72,11 @@ def boneToVertex(basemesh, point):
         return [closerVert[1]]
 
 def getVertsFromGroup(basemesh, groupName):
-
     """
-    In Blender the vertgroups are stored in a odd way.
+    In Blender the vertgroups are stored in an odd way.
     So to retrieve the vertices that are in a group of vertices, it's
     needed to do a series of loops.
-    This function return all the vertices (and their weights) for the specified
+    This function returns all the vertices (and their weights) for the specified
     group.
     
     Parameters
@@ -94,16 +93,16 @@ def getVertsFromGroup(basemesh, groupName):
     if groupName in basemesh.vertex_groups:
         objGroup = basemesh.vertex_groups[groupName]
         for vert in basemesh.data.vertices:
-            for vertGroup in vert.groups:
-                if vertGroup.group == objGroup.index:
-                    vertsInGroup.append([vert.index,round(vertGroup.weight,4)])
+            if objGroup.index in [g.group for g in vert.groups]:
+                weight = round(vertGroup.weight,4)
+                if weight > 0:
+                    vertsInGroup.append([vert.index, weight])
 
     return vertsInGroup
 
 def getWeightsData(basemesh, armature):
-
     """
-    This function extract the weight information.
+    This function extracts the weight information.
     In Blender each bone is linked to a group with the same name.
     So for each bone we get the related group and extract the weight
     of each vert of this group.
@@ -419,11 +418,11 @@ def writeRiggingFile(context, filepath):
     dataWeights["weights"] =  weights
     
     
-    outfile = open(filepath, 'w')
+    outfile = open(filepath, 'wb')
     json.dump(dataArmature, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     outfile.close()
         
-    outfile = open(weightsFilePath, 'w')
+    outfile = open(weightsFilePath, 'wb')
     json.dump(dataWeights, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     outfile.close()
 
