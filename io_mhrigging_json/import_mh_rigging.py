@@ -69,7 +69,7 @@ def createArmatureFromJsonFile(filePath):
         newBone.align_roll(z_axis)
 
     for boneName, boneData in bones.items():
-        parentName = boneData['parent']
+        parentName = boneData.get('parent', None)
         if parentName != None:
             amt.edit_bones[boneName].parent = amt.edit_bones[parentName]
 
