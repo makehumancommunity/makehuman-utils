@@ -419,11 +419,11 @@ def writeRiggingFile(context, filepath):
     dataWeights["weights"] =  weights
     
     
-    outfile = open(filepath, 'wb')
+    outfile = open(filepath, 'w')
     json.dump(dataArmature, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     outfile.close()
         
-    outfile = open(weightsFilePath, 'wb')
+    outfile = open(weightsFilePath, 'w')
     json.dump(dataWeights, outfile, sort_keys=True, indent=4, separators=(',', ': '))
     outfile.close()
 
