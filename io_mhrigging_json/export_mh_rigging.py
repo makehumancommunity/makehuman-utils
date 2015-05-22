@@ -93,10 +93,11 @@ def getVertsFromGroup(basemesh, groupName):
     if groupName in basemesh.vertex_groups:
         objGroup = basemesh.vertex_groups[groupName]
         for vert in basemesh.data.vertices:
-            if objGroup.index in [g.group for g in vert.groups]:
-                weight = round(vertGroup.weight,4)
-                if weight > 0:
-                    vertsInGroup.append([vert.index, weight])
+            for vertGroup in vert.groups:
+                if vertGroup.group == objGroup.index:
+                    weight = round(vertGroup.weight,4)
+                    if weight > 0:
+                        vertsInGroup.append([vert.index, weight])
 
     return vertsInGroup
 
