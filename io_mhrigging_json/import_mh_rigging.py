@@ -14,7 +14,7 @@ def createArmatureFromJsonFile(filePath):
     name = armatureData['name']
     jointCoordinates = {}
     bones = armatureData['bones']
-    planes = armatureData['planes']  # TODO isnt this called reference_planes?
+    planes = armatureData['planes']
     # TODO fix if no planes defined
     #weights = armatureData['weights']
 
@@ -29,7 +29,7 @@ def createArmatureFromJsonFile(filePath):
         for group, weights in weights.items():
             newGroup = basemesh.vertex_groups.new(group)
             for weightData in weights:
-                newGroup.add([weightData[0]], weightData[1], 'REPLACE')
+                newGroup.add([weightData[0]], weightData[1], 'ADD')
 
     for joint, vertices in joints.items():        
         jointCoordinates[joint] = vertsindexToCentroid(vertices)
@@ -51,8 +51,7 @@ def createArmatureFromJsonFile(filePath):
         newBone = amt.edit_bones.new('Bone')
         headKey = boneData['head']
         tailKey = boneData['tail']
-        # TODO fix if plane not specified
-        rollPlane = boneData["rotation_plane"]
+        rollPlane = boneData.get("rotation_plane", None)
 
         headCoords = jointCoordinates[headKey]
         tailCoords = jointCoordinates[tailKey]
@@ -62,11 +61,15 @@ def createArmatureFromJsonFile(filePath):
         newBone.tail = tailCoords
         #newBone.roll = ...
         # Set the roll using a reference plane
-        plane = planes[rollPlane]
-        plane_coords = get_plane_coords(plane, jointCoordinates)
-        normal = get_normal(plane_coords)
-        z_axis = normal.cross(newBone.y_axis)
-        newBone.align_roll(z_axis)
+        try:
+            plane = planes[rollPlane]
+            plane_coords = get_plane_coords(plane, jointCoordinates)
+            normal = get_normal(plane_coords)
+            z_axis = normal.cross(newBone.y_axis)
+            newBone.align_roll(z_axis)
+        except:
+            # TODO for other rigs than the default we currently cannot set the rolls correctly
+            pass
 
     for boneName, boneData in bones.items():
         parentName = boneData.get('parent', None)
