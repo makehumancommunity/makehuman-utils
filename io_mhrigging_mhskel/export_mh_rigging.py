@@ -400,11 +400,11 @@ def writeRiggingFile(context, filepath):
     weightsFile = os.path.basename(weightsFilePath)
 
     dataArmature = {}
-    dataArmature["name"] = basemesh.name
+    dataArmature["name"] = armature.name
     dataArmature["version"] = VERSION #102 means 1.0.2
-    dataArmature["copyright"] = "(c) Makehuman.org 2014"
+    dataArmature["copyright"] = "(c) Makehuman.org 2015"
     dataArmature["license"] = "GNU Affero General Public License 3"
-    dataArmature["description"] = "Very cool general-purpose skeleton"
+    dataArmature["description"] = "%s skeleton" % armature.name
     dataArmature["joints"] =  joints
     dataArmature["bones"] =  bones
     dataArmature["planes"] =  rot_planes
