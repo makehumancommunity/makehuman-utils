@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Abstract
 --------
 
-Export a json file with a rigging designed upon the makehuman base mesh.
+Export a mhskel file with a rigging designed upon the makehuman base mesh.
 
 To use this script, you can place it in the .blender/scripts/addons dir
 and then activate the script in the "Addons" tab (user preferences).
@@ -137,7 +137,7 @@ def getBonesData(basemesh, armature):
     This function extract the main informations of each bone,
     (bone name, head name, tail name, rotation plane, parent name)
     and return them as dictionary, ready to be written
-    in json format. It also creates an empty dictionary of
+    in mhskel format. It also creates an empty dictionary of
     rotation planes, to be filled by hand, atm.
     
     Parameters
@@ -364,7 +364,7 @@ def getJointsData(basemesh, armature):
 def writeRiggingFile(context, filepath):
 
     """
-    This function write the data in json format.
+    This function write the data in mhskel format.
     
     Parameters
     ----------
@@ -396,7 +396,7 @@ def writeRiggingFile(context, filepath):
     joints = getJointsData(basemesh, armature)
     weights = getWeightsData(basemesh, armature)    
 
-    weightsFilePath = os.path.splitext(filepath)[0]+"_weights.jsonw"
+    weightsFilePath = os.path.splitext(filepath)[0]+"_weights.mhw"
     weightsFile = os.path.basename(weightsFilePath)
 
     dataArmature = {}
@@ -444,7 +444,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
+    self.layout.operator(ExportMHRigging.bl_idname, text="MakeHuman rigging (.mhskel)")    
 
 class ExportMHRigging(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -452,10 +452,10 @@ class ExportMHRigging(Operator, ExportHelper):
     bl_label = "Export MakeHuman Rigging"
 
     # ImportHelper mixin class uses this
-    filename_ext = ".json"
+    filename_ext = ".mhskel"
 
     filter_glob = StringProperty(
-            default="*.json",
+            default="*.mhskel",
             options={'HIDDEN'},
             )
 

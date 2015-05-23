@@ -120,7 +120,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
 def menu_func_import(self, context):    
-    self.layout.operator(ImportMHRigging.bl_idname, text="MakeHuman rigging (.json)")    
+    self.layout.operator(ImportMHRigging.bl_idname, text="MakeHuman rigging (.mhskel)")    
 
 class ImportMHRigging(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -128,10 +128,10 @@ class ImportMHRigging(Operator, ImportHelper):
     bl_label = "Import MakeHuman Rigging"
 
     # ImportHelper mixin class uses this
-    filename_ext = ".json"
+    filename_ext = ".mhskel"
 
     filter_glob = StringProperty(
-            default="*.json",
+            default="*.mhskel",
             options={'HIDDEN'},
             )
 

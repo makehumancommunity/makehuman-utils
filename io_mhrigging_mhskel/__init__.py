@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Abstract
 --------
 
-Export a json file with a rigging designed upon the makehuman base mesh.
+Export an mhskel file with a rigging designed upon the makehuman base mesh.
 
 To use this script, you can place it in the .blender/scripts/addons dir
 and then activate the script in the "Addons" tab (user preferences).
@@ -37,12 +37,12 @@ Access from the File > Import menu.
 """
 
 bl_info = {
-    'name': 'Export: MakeHuman Rigging (.json)',
+    'name': 'Export: MakeHuman Rigging (.mhskel)',
     'author': 'Manuel Bastioni',
     'version': (1,0,2),
     "blender": (2,6,0),
-    'location': "File > Export > MakeHuman Rigging (.json) and File > Import > MakeHuman Rigging (.json)",
-    'description': 'Export skeleton, groups and weights as json file',
+    'location': "File > Export > MakeHuman Rigging (.mhskel) and File > Import > MakeHuman Rigging (.mhskel)",
+    'description': 'Export skeleton, groups and weights as mhskel file',
     'warning': '',
     'wiki_url': '',
     'category': 'MakeHuman'}

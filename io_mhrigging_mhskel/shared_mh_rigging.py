@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Abstract
 --------
 
-Export a json file with a rigging designed upon the makehuman base mesh.
+Export a mhskel file with a rigging designed upon the makehuman base mesh.
 
 """
 
