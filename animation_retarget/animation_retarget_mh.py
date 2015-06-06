@@ -375,7 +375,7 @@ def retarget_animation(src_rig, trg_rig, insert_restframes=False):
     blend in each pose using action constraints.
     """
     r = AnimationRetarget(src_rig, trg_rig)
-    r.retarget(bpy.context.scene, range(500), insert_restframes)  # TODO determine how many frames to copy
+    r.retarget(bpy.context.scene, range(1,500+1), insert_restframes)  # TODO determine how many frames to copy
 
 
 def main():
