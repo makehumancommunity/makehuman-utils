@@ -40,6 +40,7 @@ allowing it to automatically find combinations if bone names are similar.
 """
 
 import bpy
+import mathutils
 from difflib import SequenceMatcher
 
 BONE_NAME_SIMILARITY_THRESHOLD = 0.7
@@ -219,10 +220,16 @@ class AnimationRetarget(object):
             else:
                 print ("Could not find an approriate source bone for %s" % trg_bone.name)
 
-    def _retarget_frame(scn, frame_idx):
+    def _retarget_frame(self, scn, frame_idx, target_frame):
         scn.frame_set(frame_idx)
         for b_map in self.bone_mappings:
-            b_map.retarget(frame_idx)
+            b_map.retarget(target_frame)
+
+    def _set_rest_frame(self, target_frame):
+        pose_mat = mathutils.Matrix()
+        pose_mat.identity()
+        for b_map in self.bone_mappings:
+            b_map.insert_keyframe(target_frame, pose_mat)
 
     def retarget(self, scn, frames, insert_restframes=False):
         """Start the retarget operation for specified frames.
@@ -234,11 +241,18 @@ class AnimationRetarget(object):
         for bm in self.bone_mappings:
             bm.update_matrices()
 
-        for frame_idx in frames:
-            if insert_restframes and frame_idx > 2:
-                self._retarget_frame(scn, 1)
+        if insert_restframes:
+            print ("Rest keyframe insertion is enabled")
 
-            self._retarget_frame(scn, frame_idx)
+        tf_idx = 1
+        for c, frame_idx in enumerate(frames):
+            print ("Retargetting frame %s/%s" % (c, len(frames)))
+            if insert_restframes and frame_idx > 2:
+                self._set_rest_frame(tf_idx)
+                tf_idx += 1
+
+            self._retarget_frame(scn, frame_idx, tf_idx)
+            tf_idx += 1
 
 
 class BoneMapping(object):
