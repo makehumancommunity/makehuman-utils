@@ -219,7 +219,12 @@ class AnimationRetarget(object):
             else:
                 print ("Could not find an approriate source bone for %s" % trg_bone.name)
 
-    def retarget(self, scn, frames):
+    def _retarget_frame(scn, frame_idx):
+        scn.frame_set(frame_idx)
+        for b_map in self.bone_mappings:
+            b_map.retarget(frame_idx)
+
+    def retarget(self, scn, frames, insert_restframes=False):
         """Start the retarget operation for specified frames.
         """
         scn.frame_set(0)
@@ -230,9 +235,10 @@ class AnimationRetarget(object):
             bm.update_matrices()
 
         for frame_idx in frames:
-            scn.frame_set(frame_idx)
-            for b_map in self.bone_mappings:
-                b_map.retarget(frame_idx)
+            if insert_restframes and frame_idx > 2:
+                self._retarget_frame(scn, 1)
+
+            self._retarget_frame(scn, frame_idx)
 
 
 class BoneMapping(object):
@@ -349,9 +355,13 @@ def get_armatures(context):
 
     return (src_rig, trg_rig)
 
-def retarget_animation(src_rig, trg_rig):
+def retarget_animation(src_rig, trg_rig, insert_restframes=False):
+    """With insert_restframes == True the first frame, which is supposed to contain the
+    rest pose, is copied in between every two frames. This makes it possible to
+    blend in each pose using action constraints.
+    """
     r = AnimationRetarget(src_rig, trg_rig)
-    r.retarget(bpy.context.scene, range(10))  # TODO determine how many frames to copy
+    r.retarget(bpy.context.scene, range(500), insert_restframes)  # TODO determine how many frames to copy
 
 
 def main():

@@ -71,6 +71,7 @@ class ANIM_OT_retarget_animation_mh(bpy.types.Operator):
 
     src_rig = bpy.props.StringProperty(name="Source rig", description="Armature object to copy the active animation from", default="")
     trg_rig = bpy.props.StringProperty(name="Target rig", description="Armature object to transfer the animation to", default="")
+    insert_rests = bpy.props.BoolProperty(name="Insert rest frames", description="Insert a rest frame between every two frames", default=False)
 
     def execute(self, context):
         """Transfer current animation from source armature (selected) to the
@@ -84,13 +85,15 @@ class ANIM_OT_retarget_animation_mh(bpy.types.Operator):
             return {'FINISHED'}
 
         self.report({'INFO'}, "Retarget animation from %s to %s" % (self.src_rig, self.trg_rig))
-        animation_retarget_mh.retarget_animation(bpy.data.objects[self.src_rig], bpy.data.objects[self.trg_rig])
+        animation_retarget_mh.retarget_animation(bpy.data.objects[self.src_rig], bpy.data.objects[self.trg_rig], self.insert_rests)
         return {'FINISHED'}
 
     def invoke(self, context, event):
         src_rig, trg_rig = animation_retarget_mh.get_armatures(context)
         self.src_rig = src_rig.name
         self.trg_rig = trg_rig.name
+        scene = context.scene
+        self.insert_rests = bool(scene.mhanim_retarget_insertrests)
         return self.execute(context)
 
     @classmethod
@@ -133,6 +136,11 @@ class VIEW3D_PT_retarget_animation_mh(bpy.types.Panel):
         row = col.row()
         row.operator('anim.retarget_animation_mh', icon='ARMATURE_DATA')
 
+        scene = context.scene
+        col = layout.column(align=True)
+        row = col.row()
+        row.prop(scene, "mhanim_retarget_insertrests")
+
         try:
             src_rig, trg_rig = animation_retarget_mh.get_armatures(context)
 
@@ -149,9 +157,11 @@ class VIEW3D_PT_retarget_animation_mh(bpy.types.Panel):
 
 def register():
     bpy.utils.register_module(__name__)
+    bpy.types.Scene.mhanim_retarget_insertrests = bpy.props.BoolProperty(name="(MH Anim retarget) Insert rest frames", description="Insert a rest frame between every two frames", default=False)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+    del bpy.types.Scene.mhanim_retarget_insertrests
 
 if __name__ == "__main__":
     register()
