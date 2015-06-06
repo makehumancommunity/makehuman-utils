@@ -220,18 +220,18 @@ class AnimationRetarget(object):
             else:
                 print ("Could not find an approriate source bone for %s" % trg_bone.name)
 
-    def _retarget_frame(self, scn, frame_idx, target_frame):
+    def _retarget_frame(self, scn, frame_idx, target_frame, in_place=False):
         scn.frame_set(frame_idx)
         for b_map in self.bone_mappings:
-            b_map.retarget(target_frame)
+            b_map.retarget(target_frame, in_place)
 
-    def _set_rest_frame(self, target_frame):
+    def _set_rest_frame(self, target_frame, in_place=False):
         pose_mat = mathutils.Matrix()
         pose_mat.identity()
         for b_map in self.bone_mappings:
-            b_map.insert_keyframe(target_frame, pose_mat)
+            b_map.insert_keyframe(target_frame, pose_mat, in_place)
 
-    def retarget(self, scn, frames, insert_restframes=False):
+    def retarget(self, scn, frames, insert_restframes=False, in_place=False):
         """Start the retarget operation for specified frames.
         """
         scn.frame_set(0)
@@ -248,10 +248,10 @@ class AnimationRetarget(object):
         for c, frame_idx in enumerate(frames):
             print ("Retargetting frame %s/%s" % (c, len(frames)))
             if insert_restframes and frame_idx > 2:
-                self._set_rest_frame(tf_idx)
+                self._set_rest_frame(tf_idx, in_place)
                 tf_idx += 1
 
-            self._retarget_frame(scn, frame_idx, tf_idx)
+            self._retarget_frame(scn, frame_idx, tf_idx, in_place)
             tf_idx += 1
 
 
@@ -312,20 +312,20 @@ class BoneMapping(object):
     def __unicode__(self):
         return '<BoneMapping %s -> %s>' % (self.src_bone.name, self.trg_bone.name)
 
-    def insert_keyframe(self, frame_idx, pose_mat):
+    def insert_keyframe(self, frame_idx, pose_mat, in_place=False):
         """Insert the specified matrix as a keyframe for the target bone.
         """
         set_rotation(self.trg_pbone, pose_mat, frame_idx)
-        if not self.trg_bone.parent:
+        if not in_place and not self.trg_bone.parent:
             set_translation(self.trg_pbone, pose_mat, frame_idx)
 
-    def retarget(self, frame_idx):
+    def retarget(self, frame_idx, in_place=False):
         """Retarget the current pose of the source bone to the target bone, and
         apply it as keyframe with specified index.
         """
         frame_mat = self.src_pbone.matrix.to_4x4()
         pose_mat = self.retarget_frame(frame_mat)
-        self.insert_keyframe(frame_idx, pose_mat)
+        self.insert_keyframe(frame_idx, pose_mat, in_place)
 
     def retarget_frame(self, frame_mat):
         """Calculate a pose matrix for the target bone by retargeting the
@@ -369,13 +369,14 @@ def get_armatures(context):
 
     return (src_rig, trg_rig)
 
-def retarget_animation(src_rig, trg_rig, insert_restframes=False):
+def retarget_animation(src_rig, trg_rig, insert_restframes=False, in_place=False):
     """With insert_restframes == True the first frame, which is supposed to contain the
     rest pose, is copied in between every two frames. This makes it possible to
     blend in each pose using action constraints.
+    If in_place == True translations of the root bone are ignored.
     """
     r = AnimationRetarget(src_rig, trg_rig)
-    r.retarget(bpy.context.scene, range(1,500+1), insert_restframes)  # TODO determine how many frames to copy
+    r.retarget(bpy.context.scene, range(1,500+1), insert_restframes, in_place)  # TODO determine how many frames to copy
 
 
 def main():
