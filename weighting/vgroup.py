@@ -554,7 +554,7 @@ class VIEW3D_OT_RemoveUnlinkedButton(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self, context):
-        bpy.ops.mesh.select_linked(limit=True)
+        bpy.ops.mesh.select_linked(delimit={'SEAM'})
         bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
         bpy.ops.mesh.select_all(action='INVERT')
         bpy.ops.object.vertex_group_remove_from()
@@ -563,7 +563,6 @@ class VIEW3D_OT_RemoveUnlinkedButton(bpy.types.Operator):
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.vertex_group_select()
         return{'FINISHED'}
-
 
 
 
